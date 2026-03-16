@@ -1,3 +1,9 @@
 # Python
 .venv
 *.pyc
+
+# IDEs
+.vscode
+
+# Data
+*.sqlite3
