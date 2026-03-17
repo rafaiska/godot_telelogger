@@ -12,7 +12,7 @@ class PlayerCommandSerializer(serializers.ModelSerializer):
 
 
 class PlaySessionSerializer(serializers.ModelSerializer):
-    commands = PlayerCommandSerializer(many=True, required=False)
+    commands = PlayerCommandSerializer(many=True, required=False, write_only=True)
 
     class Meta:
         model = PlaySession
