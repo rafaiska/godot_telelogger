@@ -12,6 +12,10 @@ Export file to be used with [Bruno, The Git-native API client](https://www.usebr
 
 The Telelogger itself: a Django-based REST API for handling game data
 
-## session_logger.gd
+## telelogger-example
+
+Example Godot project that uses the API to log sessions and commands
+
+## telelogger-example/session_logger.gd
 
 GDScript file to handle communications with a running instance of the Telelogger
