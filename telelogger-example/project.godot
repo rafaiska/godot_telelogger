@@ -21,6 +21,10 @@ window/size/viewport_height=144
 window/stretch/mode="viewport"
 window/stretch/scale_mode="integer"
 
+[global_group]
+
+bullet=""
+
 [rendering]
 
 textures/canvas_textures/default_texture_filter=0

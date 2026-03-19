@@ -1,0 +1,22 @@
+[gd_scene load_steps=5 format=3 uid="uid://mcrrmdr2xhjd"]
+
+[ext_resource type="Texture2D" uid="uid://dk0vtfphdfi4p" path="res://sprites.png" id="1_7k104"]
+[ext_resource type="Script" uid="uid://colod2mg433k0" path="res://enemy.gd" id="2_4gyqm"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qtpbo"]
+atlas = ExtResource("1_7k104")
+region = Rect2(16, 0, 16, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_4gyqm"]
+size = Vector2(16, 16)
+
+[node name="Enemy" type="Sprite2D"]
+texture = SubResource("AtlasTexture_qtpbo")
+script = ExtResource("2_4gyqm")
+
+[node name="Area2D" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+shape = SubResource("RectangleShape2D_4gyqm")
+
+[connection signal="body_entered" from="Area2D" to="." method="_on_area_2d_body_entered"]
