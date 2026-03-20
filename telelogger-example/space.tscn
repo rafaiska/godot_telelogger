@@ -1,12 +1,22 @@
-[gd_scene load_steps=5 format=3 uid="uid://b6xkpj7x5afol"]
+[gd_scene load_steps=6 format=3 uid="uid://b6xkpj7x5afol"]
 
 [ext_resource type="Script" uid="uid://dob2t4ur2c5ve" path="res://space.gd" id="1_81phd"]
 [ext_resource type="Texture2D" uid="uid://dk0vtfphdfi4p" path="res://sprites.png" id="1_d5lh8"]
-[ext_resource type="PackedScene" uid="uid://mcrrmdr2xhjd" path="res://enemy.tscn" id="3_rxlph"]
+[ext_resource type="FontFile" uid="uid://bhq3i6qi18mue" path="res://MunroSmall-wPZw.ttf" id="4_rxlph"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_81phd"]
 atlas = ExtResource("1_d5lh8")
 region = Rect2(0, 0, 16, 16)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qtpbo"]
+content_margin_left = 1.0
+content_margin_right = 1.0
+bg_color = Color(0.29411766, 0.42745098, 0.85882354, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+anti_aliasing = false
 
 [node name="Space" type="Node2D"]
 script = ExtResource("1_81phd")
@@ -22,7 +32,39 @@ texture = SubResource("AtlasTexture_81phd")
 
 [node name="EnemyPool" type="Node2D" parent="."]
 
-[node name="Enemy" parent="EnemyPool" instance=ExtResource("3_rxlph")]
-position = Vector2(121, 8)
-
 [node name="BulletPool" type="Node2D" parent="."]
+
+[node name="Score" type="Label" parent="."]
+offset_left = 198.0
+offset_top = -8.0
+offset_right = 257.0
+offset_bottom = 16.0
+theme_override_fonts/font = ExtResource("4_rxlph")
+theme_override_font_sizes/font_size = 20
+text = "000000"
+
+[node name="ShootDelay" type="Timer" parent="."]
+wait_time = 0.5
+one_shot = true
+
+[node name="EnemySpawn" type="Timer" parent="."]
+
+[node name="NewSessionB" type="Button" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 77.0
+offset_top = 28.0
+offset_right = 167.0
+offset_bottom = 52.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/font = ExtResource("4_rxlph")
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxFlat_qtpbo")
+text = "New Session"
+
+[connection signal="timeout" from="EnemySpawn" to="." method="_on_enemy_spawn_timeout"]
+[connection signal="pressed" from="NewSessionB" to="." method="_on_new_session_b_pressed"]

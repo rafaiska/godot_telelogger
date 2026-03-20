@@ -48,6 +48,27 @@ class PlaylogsIntegrationTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertNotIn("commands", response.data)
 
+    def test_create_command_accepts_session_id(self):
+        session = PlaySession.objects.create(random_seed="seed-command-create")
+
+        url = reverse("playercommand-list")
+        payload = {
+            "session": session.id,
+            "command_type": "jump",
+            "timestamp_ms": 123,
+        }
+        response = self.client.post(url, payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["session"], session.id)
+        self.assertTrue(
+            PlayerCommand.objects.filter(
+                session=session,
+                command_type="jump",
+                timestamp_ms=123,
+            ).exists()
+        )
+
     def test_command_list_can_be_filtered_by_session(self):
         session = PlaySession.objects.create(random_seed="seed-filter")
         PlayerCommand.objects.create(

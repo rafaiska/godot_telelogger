@@ -1,11 +1,54 @@
 extends Node2D
 
 @onready var packed_bullet: PackedScene = load("res://bullet.tscn")
+@onready var packed_enemy: PackedScene = load("res://enemy.tscn")
+@onready var shoot_delay: Timer = $ShootDelay
 var disabled_bullets = []
+var disabled_enemies = []
+var max_speed = 50.0
+var score: int = 0
+var autofire: bool
+var telelogger_agent = null
+var session_logger = null
+var speed: float = 0.0
+
+const DIFFICULTY_RATE = 3.0
+
+func _ready() -> void:
+	Engine.time_scale = 0.0
+	$NewSessionB.grab_focus()
 
 func _input(event: InputEvent) -> void:
+	if telelogger_agent != null:
+		return
 	if event.is_action_pressed('ui_accept'):
+		autofire = true
+		send_command('autofire=on')
+	if event.is_action_released('ui_accept'):
+		autofire = false
+		send_command('autofire=off')
+
+func _physics_process(delta: float) -> void:
+	var new_speed = Input.get_axis('ui_left', 'ui_right') * 100.0
+	if new_speed != speed:
+		speed = new_speed
+		send_command('speed=%.1f' % speed)
+	if speed != 0:
+		$Player.global_position += Vector2(speed * delta, 0)
+		if $Player.global_position.x < 32:
+			$Player.global_position.x = 32
+		if $Player.global_position.x > 255 - 32:
+			$Player.global_position.x = 255 - 32
+
+func send_command(command: String):
+	if session_logger != null:
+		session_logger.send_command(command)
+
+func _process(delta: float) -> void:
+	max_speed += delta * DIFFICULTY_RATE
+	if autofire and shoot_delay.is_stopped():
 		fire()
+		shoot_delay.start()
 
 func fire():
 	var new_b = null
@@ -15,7 +58,37 @@ func fire():
 		new_b = packed_bullet.instantiate()
 		new_b.was_disabled.connect(_on_bullet_was_disabled)
 		$BulletPool.add_child(new_b)
-	new_b.call_deferred('shoot', $Player.global_position)
+	new_b.shoot($Player.global_position)
 
 func _on_bullet_was_disabled(bullet: CharacterBody2D) -> void:
 	disabled_bullets.append(bullet)
+
+func _on_game_over():
+	Engine.time_scale = 0.0
+
+func _on_enemy_destroyed(enemy: Sprite2D):
+	score += enemy.self_modulate.r8
+	$Score.text = '%06d' % score
+	disabled_enemies.append(enemy)
+
+func _on_enemy_spawn_timeout() -> void:
+	var new_e = null
+	if disabled_enemies.size() > 0:
+		new_e = disabled_enemies.pop_back()
+	else:
+		new_e = packed_enemy.instantiate()
+		new_e.game_over.connect(_on_game_over)
+		new_e.destroyed.connect(_on_enemy_destroyed)
+		$EnemyPool.add_child(new_e)
+	new_e.configure(max_speed)
+
+
+func _on_new_session_b_pressed() -> void:
+	session_logger = Node.new()
+	session_logger.set_script(load('res://session_logger.gd'))
+	add_child(session_logger)
+	session_logger.configure_new_session(randi())
+	seed(session_logger.random_seed)
+	$NewSessionB.visible = false
+	Engine.time_scale = 1.0
+	$EnemySpawn.start()
