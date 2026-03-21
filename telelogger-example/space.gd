@@ -14,25 +14,31 @@ var speed: float = 0.0
 
 const DIFFICULTY_RATE = 3.0
 
+func set_speed(speed_: float):
+	speed = speed_
+
+func set_autofire(toggle: bool):
+	autofire = toggle
+
 func _ready() -> void:
 	Engine.time_scale = 0.0
 	$NewSessionB.grab_focus()
 
 func _input(event: InputEvent) -> void:
-	if telelogger_agent != null:
-		return
-	if event.is_action_pressed('ui_accept'):
-		autofire = true
-		send_command('autofire=on')
-	if event.is_action_released('ui_accept'):
-		autofire = false
-		send_command('autofire=off')
+	if session_logger != null and Engine.time_scale > 0.0:
+		if event.is_action_pressed('ui_accept'):
+			autofire = true
+			send_command('autofire=on')
+		if event.is_action_released('ui_accept'):
+			autofire = false
+			send_command('autofire=off')
 
 func _physics_process(delta: float) -> void:
-	var new_speed = Input.get_axis('ui_left', 'ui_right') * 100.0
-	if new_speed != speed:
-		speed = new_speed
-		send_command('speed=%.1f' % speed)
+	if session_logger != null and Engine.time_scale > 0.0:
+		var new_speed = Input.get_axis('ui_left', 'ui_right') * 100.0
+		if new_speed != speed:
+			speed = new_speed
+			send_command('speed=%.1f' % speed)
 	if speed != 0:
 		$Player.global_position += Vector2(speed * delta, 0)
 		if $Player.global_position.x < 32:
@@ -45,6 +51,8 @@ func send_command(command: String):
 		session_logger.send_command(command)
 
 func _process(delta: float) -> void:
+	if telelogger_agent != null and Engine.time_scale > 0.0:
+		telelogger_agent.process_agent(self, delta)
 	max_speed += delta * DIFFICULTY_RATE
 	if autofire and shoot_delay.is_stopped():
 		fire()
@@ -90,5 +98,18 @@ func _on_new_session_b_pressed() -> void:
 	session_logger.configure_new_session(randi())
 	seed(session_logger.random_seed)
 	$NewSessionB.visible = false
+	$ReplayLastB.visible = false
+	Engine.time_scale = 1.0
+	$EnemySpawn.start()
+
+
+func _on_replay_last_b_pressed() -> void:
+	telelogger_agent = Node.new()
+	telelogger_agent.set_script(load('res://telelogger_agent.gd'))
+	add_child(telelogger_agent)
+	telelogger_agent.load_last()
+	assert(not telelogger_agent.failed_state)
+	$NewSessionB.visible = false
+	$ReplayLastB.visible = false
 	Engine.time_scale = 1.0
 	$EnemySpawn.start()
