@@ -4,8 +4,8 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from .models import PlaySession, PlayerCommand
-from .serializers import PlaySessionSerializer, PlayerCommandSerializer
+from .models import EntityCommand, PlaySession
+from .serializers import EntityCommandSerializer, PlaySessionSerializer
 
 
 class PlaySessionViewSet(viewsets.ModelViewSet):
@@ -45,9 +45,9 @@ class PlaySessionViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-class PlayerCommandViewSet(viewsets.ModelViewSet):
-    queryset = PlayerCommand.objects.all()
-    serializer_class = PlayerCommandSerializer
+class EntityCommandViewSet(viewsets.ModelViewSet):
+    queryset = EntityCommand.objects.all()
+    serializer_class = EntityCommandSerializer
 
     def get_queryset(self):
         queryset = super().get_queryset()

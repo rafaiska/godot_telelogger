@@ -20,6 +20,22 @@ func set_speed(speed_: float):
 func set_autofire(toggle: bool):
 	autofire = toggle
 
+func spawn(enemy_name: String):
+	var new_e = null
+	if $EnemyPool.has_node(enemy_name):
+		new_e = $EnemyPool.get_node(enemy_name)
+	else:
+		new_e = packed_enemy.instantiate()
+		new_e.name = enemy_name
+		new_e.game_over.connect(_on_game_over)
+		new_e.destroyed.connect(_on_enemy_destroyed)
+		$EnemyPool.add_child(new_e)
+	new_e.configure(max_speed)
+
+func destroy(enemy_name: String):
+	if $EnemyPool.has_node(enemy_name):
+		$EnemyPool.get_node(enemy_name).destroy()
+
 func _ready() -> void:
 	Engine.time_scale = 0.0
 	$NewSessionB.grab_focus()
@@ -28,17 +44,17 @@ func _input(event: InputEvent) -> void:
 	if session_logger != null and Engine.time_scale > 0.0:
 		if event.is_action_pressed('ui_accept'):
 			autofire = true
-			send_command('autofire=on')
+			send_player_command('autofire=on')
 		if event.is_action_released('ui_accept'):
 			autofire = false
-			send_command('autofire=off')
+			send_player_command('autofire=off')
 
 func _physics_process(delta: float) -> void:
 	if session_logger != null and Engine.time_scale > 0.0:
 		var new_speed = Input.get_axis('ui_left', 'ui_right') * 100.0
 		if new_speed != speed:
 			speed = new_speed
-			send_command('speed=%.1f' % speed)
+			send_player_command('speed=%.1f' % speed)
 	if speed != 0:
 		$Player.global_position += Vector2(speed * delta, 0)
 		if $Player.global_position.x < 32:
@@ -46,9 +62,14 @@ func _physics_process(delta: float) -> void:
 		if $Player.global_position.x > 255 - 32:
 			$Player.global_position.x = 255 - 32
 
-func send_command(command: String):
+func send_player_command(command: String):
 	if session_logger != null:
-		session_logger.send_command(command)
+		session_logger.send_command('player', command, get_player_state())
+
+func get_player_state() -> Dictionary:
+	return {
+		'position': [$Player.global_position.x, $Player.global_position.y]
+	}
 
 func _process(delta: float) -> void:
 	if telelogger_agent != null and Engine.time_scale > 0.0:
@@ -75,7 +96,9 @@ func _on_game_over():
 	Engine.time_scale = 0.0
 
 func _on_enemy_destroyed(enemy: Sprite2D):
-	score += enemy.self_modulate.r8
+	if session_logger != null:
+		session_logger.send_command(enemy.name, 'destroy', enemy.get_state())
+	score += int(enemy.speed)
 	$Score.text = '%06d' % score
 	disabled_enemies.append(enemy)
 
@@ -85,23 +108,21 @@ func _on_enemy_spawn_timeout() -> void:
 		new_e = disabled_enemies.pop_back()
 	else:
 		new_e = packed_enemy.instantiate()
+		new_e.session_logger = session_logger
 		new_e.game_over.connect(_on_game_over)
 		new_e.destroyed.connect(_on_enemy_destroyed)
 		$EnemyPool.add_child(new_e)
 	new_e.configure(max_speed)
-
+	if session_logger != null:
+		session_logger.send_command(new_e.name, 'spawn', new_e.get_state())
 
 func _on_new_session_b_pressed() -> void:
 	session_logger = Node.new()
 	session_logger.set_script(load('res://session_logger.gd'))
 	add_child(session_logger)
 	session_logger.configure_new_session(randi())
-	seed(session_logger.random_seed)
-	$NewSessionB.visible = false
-	$ReplayLastB.visible = false
-	Engine.time_scale = 1.0
+	_game_start()
 	$EnemySpawn.start()
-
 
 func _on_replay_last_b_pressed() -> void:
 	telelogger_agent = Node.new()
@@ -109,7 +130,13 @@ func _on_replay_last_b_pressed() -> void:
 	add_child(telelogger_agent)
 	telelogger_agent.load_last()
 	assert(not telelogger_agent.failed_state)
+	_game_start()
+
+func _game_start():
+	if telelogger_agent != null:
+		seed(telelogger_agent.random_seed)
+	if session_logger != null:
+		seed(session_logger.random_seed)
 	$NewSessionB.visible = false
 	$ReplayLastB.visible = false
 	Engine.time_scale = 1.0
-	$EnemySpawn.start()

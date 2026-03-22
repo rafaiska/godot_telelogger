@@ -15,10 +15,12 @@ class PlaySession(models.Model):
         return f"Session {self.id} (seed={self.random_seed})"
 
 
-class PlayerCommand(models.Model):
+class EntityCommand(models.Model):
     session = models.ForeignKey(
         PlaySession, related_name="commands", on_delete=models.CASCADE
     )
+    entity_id = models.CharField(max_length=150)
+    entity_state = models.JSONField(default=dict, blank=True)
     command_type = models.CharField(max_length=100)
     timestamp_ms = models.PositiveIntegerField()
     created_at = models.DateTimeField(auto_now_add=True)

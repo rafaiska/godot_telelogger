@@ -34,7 +34,7 @@ items:
       followRedirects: true
       maxRedirects: 5
   - info:
-      name: PlayerCommand
+      name: EntityCommand
       type: http
       seq: 2
     http:

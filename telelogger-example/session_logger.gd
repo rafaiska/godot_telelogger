@@ -47,15 +47,17 @@ func configure_new_session(s_seed: int, new_preferences := {}, new_game_state :=
 	}
 	_session_request.request(SESSION_ENDPOINT, ['Content-Type: application/json'], HTTPClient.METHOD_POST, JSON.stringify(payload))
 
-func send_command(command_type: String) -> void:
+func send_command(entity_id: String, command_type: String, entity_state := {}) -> void:
 	if fail_state:
 		return
-	_pending_commands.append(_build_command_payload(command_type))
+	_pending_commands.append(_build_command_payload(entity_id, command_type, entity_state))
 	_flush_command_queue()
 
-func _build_command_payload(command_type: String) -> Dictionary:
+func _build_command_payload(entity_id: String, command_type: String, entity_state: Dictionary) -> Dictionary:
 	return {
 		"session": session_id,
+		"entity_id": entity_id,
+		"entity_state": entity_state,
 		"command_type": command_type,
 		"timestamp_ms": Time.get_ticks_msec() - session_start_ms
 	}

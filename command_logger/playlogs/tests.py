@@ -5,7 +5,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .models import PlaySession, PlayerCommand
+from .models import EntityCommand, PlaySession
 
 
 class PlaylogsIntegrationTests(APITestCase):
@@ -15,8 +15,18 @@ class PlaylogsIntegrationTests(APITestCase):
             "preferences": {"target": "stealth"},
             "game_state": {"level": 3, "health": 75},
             "commands": [
-                {"command_type": "move_forward", "timestamp_ms": 120},
-                {"command_type": "jump", "timestamp_ms": 450},
+                {
+                    "entity_id": "player-1",
+                    "entity_state": {"position": [0, 0], "hp": 100},
+                    "command_type": "move_forward",
+                    "timestamp_ms": 120,
+                },
+                {
+                    "entity_id": "npc-7",
+                    "entity_state": {"alerted": True, "target": "player-1"},
+                    "command_type": "jump",
+                    "timestamp_ms": 450,
+                },
             ],
         }
         url = reverse("playsession-list")
@@ -31,14 +41,18 @@ class PlaylogsIntegrationTests(APITestCase):
         recorded = list(session.commands.all())
         self.assertEqual(len(recorded), len(payload["commands"]))
         for command_data, recorded_command in zip(payload["commands"], recorded):
+            self.assertEqual(recorded_command.entity_id, command_data["entity_id"])
+            self.assertEqual(recorded_command.entity_state, command_data["entity_state"])
             self.assertEqual(recorded_command.command_type, command_data["command_type"])
             self.assertEqual(recorded_command.timestamp_ms, command_data["timestamp_ms"])
         self.assertNotIn("commands", response.data)
 
     def test_session_detail_omits_commands(self):
         session = PlaySession.objects.create(random_seed="seed-serialize")
-        PlayerCommand.objects.create(
+        EntityCommand.objects.create(
             session=session,
+            entity_id="player-1",
+            entity_state={"speed": 2.1},
             command_type="move",
             timestamp_ms=15,
         )
@@ -51,9 +65,11 @@ class PlaylogsIntegrationTests(APITestCase):
     def test_create_command_accepts_session_id(self):
         session = PlaySession.objects.create(random_seed="seed-command-create")
 
-        url = reverse("playercommand-list")
+        url = reverse("entitycommand-list")
         payload = {
             "session": session.id,
+            "entity_id": "npc-2",
+            "entity_state": {"behavior": "aggressive"},
             "command_type": "jump",
             "timestamp_ms": 123,
         }
@@ -62,8 +78,9 @@ class PlaylogsIntegrationTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["session"], session.id)
         self.assertTrue(
-            PlayerCommand.objects.filter(
+            EntityCommand.objects.filter(
                 session=session,
+                entity_id="npc-2",
                 command_type="jump",
                 timestamp_ms=123,
             ).exists()
@@ -71,24 +88,30 @@ class PlaylogsIntegrationTests(APITestCase):
 
     def test_command_list_can_be_filtered_by_session(self):
         session = PlaySession.objects.create(random_seed="seed-filter")
-        PlayerCommand.objects.create(
+        EntityCommand.objects.create(
             session=session,
+            entity_id="player-3",
+            entity_state={"ammo": 12},
             command_type="dash",
             timestamp_ms=10,
         )
-        PlayerCommand.objects.create(
+        EntityCommand.objects.create(
             session=session,
+            entity_id="npc-4",
+            entity_state={"stunned": False},
             command_type="attack",
             timestamp_ms=200,
         )
         other_session = PlaySession.objects.create(random_seed="seed-other")
-        PlayerCommand.objects.create(
+        EntityCommand.objects.create(
             session=other_session,
+            entity_id="npc-99",
+            entity_state={"idle": True},
             command_type="idle",
             timestamp_ms=0,
         )
 
-        url = reverse("playercommand-list") + f"?session={session.id}"
+        url = reverse("entitycommand-list") + f"?session={session.id}"
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)
