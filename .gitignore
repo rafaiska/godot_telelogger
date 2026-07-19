@@ -28,3 +28,7 @@ replay_pid*
 *.iws
 *.iml
 *.ipr
+
+# AI Assistants
+AGENTS.md
+issues
