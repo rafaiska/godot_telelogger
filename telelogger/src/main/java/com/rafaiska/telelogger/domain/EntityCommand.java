@@ -57,6 +57,16 @@ public class EntityCommand {
 		this.timestampMs = timestampMs;
 	}
 
+    public EntityCommand(PlaySession session, String entityId, Map<String, Object> entityState,
+            String commandType, Long timestampMs) {
+        this(entityId, entityState, commandType, timestampMs);
+        this.session = session;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
 	void attachTo(PlaySession session) {
 		this.session = session;
 	}
