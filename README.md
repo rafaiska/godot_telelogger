@@ -52,26 +52,6 @@ Example request:
 
 Nested commands are persisted atomically with the session and are not included in session responses.
 
-### Commands during a session
-
-`POST /api/commands/` (also accepts no trailing slash) appends a command to an existing session:
-
-```json
-{
-  "session": 1,
-  "entity_id": "player-1",
-  "command_type": "move_forward",
-  "entity_state": {"position": [0, 0], "hp": 100},
-  "timestamp_ms": 120
-}
-```
-
-Returns `201 Created` with `{"id": 1}`. The `session` must be a positive existing
-session ID. Unknown sessions return `404`; missing or invalid required fields
-return `400`. `entity_id` and `command_type` must be nonblank (at most 150 and
-100 characters respectively), and `timestamp_ms` must be nonnegative.
-`entity_state` is optional and defaults to an empty object.
-
 ## Tests and packaging
 
 Run commands from `telelogger/`:
