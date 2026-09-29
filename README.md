@@ -73,3 +73,21 @@ docker build -t godot-telelogger .
 ```
 
 Deploy it with `DATABASE_URL`, `DATABASE_USERNAME`, and `DATABASE_PASSWORD` supplied as Cloud Run environment variables or secrets. Neon requires an SSL connection; include `?sslmode=require` in the JDBC URL. Flyway applies the database schema automatically when the application starts.
+
+## Browser telemetry (itch.io)
+
+CORS permits JSON POST requests to the session and command collection endpoints
+(with or without trailing slashes). The default allowed origin is
+`https://html-classic.itch.zone`.
+
+Set `TELELOGGER_CORS_ALLOWED_ORIGINS` to a comma-separated list of exact origins
+to override the default. Use the Origin request header shown in the browser's
+Network tab: the game's iframe origin may differ from its itch.io page URL.
+For local Web testing, explicitly include the development server's origin too.
+
+Preflight OPTIONS requests are handled by Spring MVC. Responses to allowed POST
+requests, including validation errors, include CORS headers. Cross-origin GET
+access and cookies are not enabled by this configuration. CORS is a browser
+policy, not API authentication.
+
+Deploy the updated application to Cloud Run for this configuration to take effect.
